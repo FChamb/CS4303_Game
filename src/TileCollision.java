@@ -3,7 +3,6 @@ public class TileCollision {
     public static void resolvePlayerVsTiles(Player p, TileMap map) {
         p.grounded = false;
 
-        // Iterate a few times because resolving one tile can push into another
         for (int iter = 0; iter < 6; iter++) {
 
             int leftC   = (int)Math.floor(p.left() / map.tileSize);
@@ -26,25 +25,20 @@ public class TileCollision {
                     float overlapY = Math.min(p.bottom(), tileB) - Math.max(p.top(), tileT);
 
                     if (overlapX > 0 && overlapY > 0) {
-                        // resolve along the axis of least penetration
                         if (overlapX < overlapY) {
-                            // push left/right
                             float tileCenterX = (tileL + tileR) * 0.5f;
                             if (p.body.position.x < tileCenterX) p.body.position.x -= overlapX;
                             else p.body.position.x += overlapX;
 
                             p.body.velocity.x = 0;
                         } else {
-                            // push up/down
                             float tileCenterY = (tileT + tileB) * 0.5f;
 
                             if (p.body.position.y < tileCenterY) {
-                                // landed on top of tile
                                 p.body.position.y -= overlapY;
                                 if (p.body.velocity.y > 0) p.body.velocity.y = 0;
                                 p.grounded = true;
                             } else {
-                                // hit head
                                 p.body.position.y += overlapY;
                                 if (p.body.velocity.y < 0) p.body.velocity.y = 0;
                             }
