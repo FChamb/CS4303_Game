@@ -1,5 +1,5 @@
 /**
- * Represents the Stage 4 grappling-hook cable constraint.
+ * Represents the Stage 4 grappling hook cable constraint.
  *
  * Unlike a spring, this does not pull the player elastically.
  * Instead, it behaves like a cable:

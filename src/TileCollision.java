@@ -2,7 +2,7 @@
  * Handles collision detection and resolution between the player
  * and the solid tiles in the world.
  *
- * The player uses an AABB (axis-aligned bounding box) collision shape.
+ * The player uses an AABB collision shape.
  * Each solid tile is also treated as an AABB.
  *
  * Collision response is done by:

@@ -23,7 +23,7 @@ public class Body {
     /**
      * Inverse mass is used instead of mass so that:
      * - multiplication can be used instead of division
-     * - invMass = 0 represents an immovable/infinite-mass object
+     * - invMass = 0 represents an immovable/infinite mass object
      */
     public float invMass = 1.0f;
 
@@ -60,7 +60,7 @@ public class Body {
      * 4. Update position from velocity
      * 5. Clear accumulated forces ready for the next frame
      *
-     * Semi-implicit Euler is used because it is simple and more stable
+     * Semi-implicit Euler is used because it is straightforward and more stable
      * than explicit Euler for this type of game physics.
      */
     public void integrate(float dt) {
@@ -77,7 +77,7 @@ public class Body {
         float damping = 0.98f;
         velocity.mult((float)Math.pow(damping, dt * 60.0f));
 
-        // Then update position using the new velocity.
+        // Then update the position using the new velocity.
         position.add(Vec2.mult(velocity, dt));
 
         // Reset the force accumulator for the next timestep.

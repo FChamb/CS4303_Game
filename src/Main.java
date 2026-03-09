@@ -11,7 +11,7 @@ import processing.event.MouseEvent;
  * - drive the physics engine
  * - apply collision resolution
  * - manage sandbox mechanics (mining, placing, inventory)
- * - manage the Stage 4 grappling-hook feature
+ * - manage the Stage 4 grappling hook feature
  *
  * This class deliberately keeps the engine modular by delegating:
  * - integration to PhysicsWorld / Body
@@ -78,7 +78,7 @@ public class Main extends PApplet {
     }
 
     /**
-     * Initialises the game world and all major objects.
+     * Initializes the game world and all major objects.
      */
     public void setup() {
         world = new PhysicsWorld();
@@ -230,7 +230,7 @@ public class Main extends PApplet {
      * Applies extra ground friction to make horizontal movement feel less floaty.
      *
      * This is separate from the physics body's damping because it is
-     * specifically a gameplay/character-control feature.
+     * specifically a gameplay/character control feature.
      */
     void applyFriction(float dt) {
         if (!player.grounded) return;
@@ -249,7 +249,7 @@ public class Main extends PApplet {
 
     /**
      * Caps horizontal speed so the player remains controllable
-     * and to reduce the chance of collision tunnelling.
+     * and to reduce the chance of collision tunneling.
      */
     void clampRunSpeed() {
         float maxRunSpeed = 220.0f;
@@ -295,7 +295,7 @@ public class Main extends PApplet {
     }
 
     /**
-     * Handles hold-to-mine block breaking.
+     * Handles hold to mine block breaking.
      *
      * Mining only progresses while:
      * - left mouse is held

@@ -25,7 +25,7 @@ public class ForceRegistry {
         }
     }
 
-    /** All active body/force-generator pairings. */
+    /** All active body/force generator pairings. */
     private final List<Registration> regs = new ArrayList<>();
 
     /**
