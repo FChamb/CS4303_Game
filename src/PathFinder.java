@@ -5,12 +5,13 @@ import java.util.PriorityQueue;
 /**
  * A* pathfinding over the tile grid.
  *
- * For these flying enemies:
- * - AIR tiles are traversable
- * - solid tiles are blocked
+ * This class handles the Level 4 pathfinding requirement by converting between:
+ * - the continuous world space used by the game
+ * - the discrete tile grid used for pathfinding
  *
- * This provides the Level 4 pathfinding component and demonstrates
- * translation between continuous world space and a discrete grid.
+ * Enemy and player positions are converted into tile coordinates, A* is run
+ * over the traversable grid, and the resulting path is turned back into
+ * world space waypoints for the enemies to follow.
  */
 public class PathFinder {
 

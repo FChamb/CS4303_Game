@@ -4,20 +4,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * Main Processing sketch for the game.
+ * Main game loop and top level controller for the game.
  *
- * Responsibilities:
- * - create and initialise the game world
- * - run the main update/render loop
- * - collect player input
- * - drive the physics engine
- * - apply collision resolution
- * - manage sandbox mechanics (mining, placing, inventory)
- * - manage dropped block items
- * - manage the grappling-hook feature
- * - manage the camera that follows the player through a large world
- * - manage compound Level 2 AI enemies and Level 3/4 behaviour
- * - manage start/death/win/game states
+ * This class is responsible for:
+ * - setting up the world, player, portal, and enemies
+ * - updating the physics and AI systems each frame
+ * - handling mining, placing, dropped items, and the grappling hook
+ * - managing the camera and game states such as start, death, and win screens
+ *
+ * I kept Main as the overall coordinator, while moving physics, enemy behavior,
+ * and pathfinding into separate classes so the code stays modular and easier to explain.
  */
 public class Main extends PApplet {
 
@@ -114,7 +110,7 @@ public class Main extends PApplet {
         world.addBody(player.body);
 
         // Portal high and far.
-        portal = new Portal(worldWidth - 260, map.getUpperGoalY(), 18);
+        portal = new Portal(worldWidth - 260, map.getUpperGoalY() - 40, 18);
 
         world.forceRegistry.add(player.body, new GravityForce(0, 900));
 

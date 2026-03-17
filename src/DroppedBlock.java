@@ -3,8 +3,11 @@ import processing.core.PApplet;
 /**
  * Represents a dropped block item in the world.
  *
- * The item falls under simple gravity, lands on solid tiles,
- * and can be picked up by the player if the inventory has space.
+ * I added this so block collection is more balanced:
+ * when a block is broken it drops into the world, falls onto the terrain,
+ * and can only be picked up if the player moves over it and has inventory space.
+ *
+ * This makes building resources feel more limited and deliberate.
  */
 public class DroppedBlock {
     public int blockType;

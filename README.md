@@ -67,17 +67,63 @@ This allows natural swinging behavior.
 
 ---
 
+# AI System
+
+The game includes hostile flying enemies that demonstrate the four AI levels required in the specification.
+
+## Level 1 – Steering Behaviors
+
+Enemies use basic steering behaviors:
+
+- wandering movement
+- seeking/pursuit of the player
+
+## Level 2 – Compound Behaviors
+
+Multiple steering behaviors are combined:
+
+- pursuit/path-following
+- obstacle avoidance (tile based lookahead)
+- separation (enemies avoid clustering)
+
+These behaviors are weighted and combined to produce smoother movement.
+
+## Level 3 – Decision Making
+
+Enemies use a **finite state machine (FSM)** with two main states:
+
+- **WANDER** – slow roaming behavior
+- **CHASE** – actively pursue the player
+
+State transitions depend on:
+
+- distance to the player
+- a short “alert timer” so enemies do not instantly disengage
+
+## Level 4 – Pathfinding
+
+Enemies use **A*** pathfinding over the tile grid:
+
+- world positions are converted to tile coordinates
+- A* is run on traversable tiles (air)
+- the resulting path is converted back into world space waypoints
+
+This allows enemies to navigate complex terrain and reach the player even when direct movement is blocked.
+
+---
+
 # Game Features
 
-The game includes several sandbox mechanics:
+The game includes several sandbox and gameplay systems:
 
-- Tile based world
-- Player movement and jumping
-- Mining blocks
-- Placing blocks
-- Inventory hotbar
-- Portal objective
-- Grappling hook pickup and swing mechanic
+- Player movement and jumping using physics
+- Tile based mining and block placement
+- Limited inventory system (2 slots, capped stack sizes)
+- Dropped block system
+- Grappling hook with single use cable constraint
+- AI enemies with multi level behaviour
+- Start screen, death screen, and win screen
+- Camera system that follows the player through the world
 
 ---
 
@@ -96,6 +142,7 @@ SPACE or W    Jump
 Left Click     Mine block
 Right Click    Place block
 Mouse Wheel    Switch hotbar slot
+1 / 2          Select hotbar slot
 ```
 
 ## Grappling Hook
@@ -107,19 +154,30 @@ E    Activate / release grapple
 The grappling hook must first be collected from the world before it can be used.  
 It has a **single use**.
 
+## Other
+
+```
+F3    Toggle help/debug text
+ENTER Navigate menus / restart
+```
+
+---
+
 ---
 
 # Objective
 
-Reach the **portal** located somewhere in the world.
+Reach the **portal** located in the world.
 
-Players may:
+Players must:
 
-- mine blocks
-- place blocks
-- use the grappling hook
+- navigate platforming sections
+- manage limited building resources
+- avoid enemies
+- use the grappling hook strategically
 
-to navigate the environment and reach the portal.
+to reach the goal.
+
 
 ---
 

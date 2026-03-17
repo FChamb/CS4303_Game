@@ -2,25 +2,17 @@ import processing.core.PApplet;
 import java.util.ArrayList;
 
 /**
- * Flying enemy using:
- * - Level 1 steering behaviours
- * - Level 2 compound behaviours
- * - Level 3 finite state machine
- * - Level 4 A* pathfinding
+ * Flying enemy AI used to demonstrate the four AI stages for the practical.
  *
- * FSM states:
- * - WANDER: default roaming behaviour
- * - CHASE: pathfind and pursue the player
+ * The behavior was built up progressively:
+ * - Level 1: basic steering behaviors such as wandering and pursuit
+ * - Level 2: compound steering through obstacle avoidance and separation
+ * - Level 3: decision making through a finite state machine
+ * - Level 4: A* pathfinding on the tile grid, including conversion between
+ *   world coordinates and discrete pathfinding nodes
  *
- * Compound steering:
- * - state behaviour
- * - obstacle avoidance
- * - separation from nearby enemies
- *
- * Level 4:
- * - world position is quantized into tile coordinates
- * - A* runs on the tile grid
- * - path tiles are localized back into world-space waypoints
+ * I chose flying enemies because they fit the mountain setting and let me focus
+ * on AI behavior and pathfinding without also needing grounded navigation.
  */
 public class Enemy {
     public final Body body;

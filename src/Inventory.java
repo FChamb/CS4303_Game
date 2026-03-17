@@ -1,3 +1,10 @@
+/**
+ * Simple fixed size hotbar inventory.
+ *
+ * The player only has two hotbar slots, and each slot can hold a small number
+ * of blocks. I added these limits so the player cannot simply build all the
+ * way to the goal without engaging with the level layout.
+ */
 public class Inventory {
     private static final int MAX_STACK_PER_SLOT = 4;
 

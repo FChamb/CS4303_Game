@@ -1,5 +1,15 @@
 import processing.core.PApplet;
 
+/**
+ * Tile based mountain level generation and storage.
+ *
+ * This class stores the tile grid, provides tile queries, and generates the
+ * mountain style level layout used in the game.
+ *
+ * I changed the world generation, so the early section is easier and the route
+ * becomes harder later on, encouraging jumping at the start and more careful
+ * block use near the end.
+ */
 public class TileMap {
     public final int tileSize;
     public final int cols, rows;
@@ -21,13 +31,6 @@ public class TileMap {
         generateTestLevel();
     }
 
-    /**
-     * Generates a tall mountain-like world with:
-     * - an easier early route made mostly of jumpable platforms
-     * - a harder late route with larger gaps and some building required
-     * - more cohesive-looking ledges, cliffs, and summit geometry
-     * - a hidden grapple reward area
-     */
     private void generateTestLevel() {
         // Fill everything with air first
         for (int r = 0; r < rows; r++) {
