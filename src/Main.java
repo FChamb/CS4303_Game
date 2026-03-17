@@ -1,5 +1,7 @@
 import processing.core.PApplet;
 import processing.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Main Processing sketch for the game.
@@ -11,9 +13,10 @@ import processing.event.MouseEvent;
  * - drive the physics engine
  * - apply collision resolution
  * - manage sandbox mechanics (mining, placing, inventory)
+ * - manage dropped block items
  * - manage the grappling-hook feature
  * - manage the camera that follows the player through a large world
- * - manage compound Level 2 AI enemies and Level 3 FSM behaviour
+ * - manage compound Level 2 AI enemies and Level 3/4 behaviour
  * - manage start/death/win/game states
  */
 public class Main extends PApplet {
@@ -23,7 +26,7 @@ public class Main extends PApplet {
     Portal portal;
     TileMap map;
 
-    // Level 2/3 AI enemies
+    // Level 2/3/4 AI enemies
     Enemy[] enemies;
 
     // timing
@@ -44,8 +47,8 @@ public class Main extends PApplet {
     // Maximum reach distance for mining and block placement.
     float interactRange = 160.0f;
 
-    // Inventory / hotbar state.
-    Inventory inv = new Inventory(3);
+    // Inventory / hotbar state: 2 slots only
+    Inventory inv = new Inventory(2);
     int selectedSlot = 0;
 
     // Mining state for timed block breaking.
@@ -53,6 +56,9 @@ public class Main extends PApplet {
     int miningR = -1, miningC = -1;
     float miningProgress = 0f;
     float miningRequired = 0f;
+
+    // Dropped block items in the world
+    ArrayList<DroppedBlock> droppedBlocks = new ArrayList<>();
 
     // Temporary HUD message state.
     String statusMsg = "";
@@ -112,7 +118,7 @@ public class Main extends PApplet {
 
         world.forceRegistry.add(player.body, new GravityForce(0, 900));
 
-        // Spread enemies across the level instead of clustering them near the start
+        // Spread enemies across the level
         enemies = new Enemy[4];
         enemies[0] = new Enemy(worldWidth * 0.22f, map.getGroundTopY() - 280);
         enemies[1] = new Enemy(worldWidth * 0.42f, map.getGroundTopY() - 620);
@@ -124,13 +130,12 @@ public class Main extends PApplet {
         }
 
         grappleCable = new GrappleCable();
-
         grapplePickupPos.set(map.getHiddenRewardX(), map.getHiddenRewardY());
 
         cameraX = 0;
         cameraY = 0;
 
-        inv = new Inventory(3);
+        inv = new Inventory(2);
         selectedSlot = 0;
 
         miningActive = false;
@@ -138,6 +143,8 @@ public class Main extends PApplet {
         miningC = -1;
         miningProgress = 0f;
         miningRequired = 0f;
+
+        droppedBlocks = new ArrayList<>();
 
         hasGrapplePickup = false;
         grappleUsed = false;
@@ -183,7 +190,6 @@ public class Main extends PApplet {
 
         updateGrapplePickup();
 
-        // Update all enemy AI before physics stepping
         for (Enemy e : enemies) {
             e.update(dt, player, map, enemies);
         }
@@ -216,6 +222,7 @@ public class Main extends PApplet {
         }
 
         updateMining(dt);
+        updateDroppedBlocks(dt);
         updateStatus(dt);
         updateCamera();
 
@@ -227,6 +234,7 @@ public class Main extends PApplet {
         portal.draw(this);
         drawGrapplePickup();
         drawGrappleCable();
+        drawDroppedBlocks();
 
         for (Enemy e : enemies) {
             e.draw(this);
@@ -301,13 +309,13 @@ public class Main extends PApplet {
 
         textSize(18);
         text("Climb through the mountains, avoid the enemies, and reach the portal.", width / 2.0f, height / 2.0f - 35);
-        text("Enemies now use a finite state machine: Wander, Chase, and Evade.", width / 2.0f, height / 2.0f - 5);
+        text("Enemies use FSM and pathfinding. Resources are limited.", width / 2.0f, height / 2.0f - 5);
 
         textSize(16);
         text("Controls:", width / 2.0f, height / 2.0f + 45);
         text("A / D = Move    SPACE/W = Jump    Left Click = Mine", width / 2.0f, height / 2.0f + 75);
         text("Right Click = Place    Mouse Wheel = Hotbar    E = Grapple", width / 2.0f, height / 2.0f + 100);
-        text("1 / 2 / 3 = Select hotbar slot    F3 = Toggle help text", width / 2.0f, height / 2.0f + 125);
+        text("1 / 2 = Select hotbar slot    F3 = Toggle help text", width / 2.0f, height / 2.0f + 125);
 
         textSize(20);
         text("Press ENTER to Start", width / 2.0f, height / 2.0f + 180);
@@ -391,7 +399,7 @@ public class Main extends PApplet {
         text("Selected Slot: " + (selectedSlot + 1) +
                 "  Item: " + TileTypes.name(selType) +
                 "  Count: " + selCount +
-                "  (scroll wheel or 1/2/3 to switch)", 20, 52);
+                "  (scroll wheel or 1/2 to switch)", 20, 52);
 
         String grappleText;
         if (grappleActive) grappleText = "Grapple: ACTIVE";
@@ -517,14 +525,36 @@ public class Main extends PApplet {
 
         if (miningProgress >= miningRequired) {
             int brokenType = map.getTile(miningR, miningC);
+
+            // Break the block and drop it into the world
             map.setTile(miningR, miningC, TileTypes.AIR);
 
-            boolean added = inv.addBlock(brokenType);
-            if (!added) {
-                setStatus("Inventory full! Couldn't pick up " + TileTypes.name(brokenType));
-            }
+            float dropX = (miningC + 0.5f) * map.tileSize;
+            float dropY = (miningR + 0.5f) * map.tileSize;
+
+            droppedBlocks.add(new DroppedBlock(brokenType, dropX, dropY));
 
             resetMining();
+        }
+    }
+
+    void updateDroppedBlocks(float dt) {
+        Iterator<DroppedBlock> it = droppedBlocks.iterator();
+
+        while (it.hasNext()) {
+            DroppedBlock drop = it.next();
+            drop.update(dt, map);
+
+            if (drop.canBePickedUpBy(player) && inv.canAddBlock(drop.blockType)) {
+                inv.addBlock(drop.blockType);
+                it.remove();
+            }
+        }
+    }
+
+    void drawDroppedBlocks() {
+        for (DroppedBlock drop : droppedBlocks) {
+            drop.draw(this);
         }
     }
 
@@ -777,7 +807,6 @@ public class Main extends PApplet {
 
         if (key == '1') selectedSlot = 0;
         if (key == '2') selectedSlot = 1;
-        if (key == '3') selectedSlot = 2;
 
         if ((key == 'e' || key == 'E') && !eHeld) {
             eHeld = true;

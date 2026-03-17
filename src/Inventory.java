@@ -1,68 +1,116 @@
 public class Inventory {
-    public static class Slot {
-        public int type = TileTypes.AIR;
-        public int count = 0;
+    private static final int MAX_STACK_PER_SLOT = 4;
+
+    private final int[] types;
+    private final int[] counts;
+
+    public Inventory(int slots) {
+        types = new int[slots];
+        counts = new int[slots];
+
+        for (int i = 0; i < slots; i++) {
+            types[i] = TileTypes.AIR;
+            counts[i] = 0;
+        }
     }
 
-    private final Slot[] slots;
-
-    public Inventory(int slotCount) {
-        slots = new Slot[slotCount];
-        for (int i = 0; i < slotCount; i++) slots[i] = new Slot();
+    /**
+     * Number of hotbar slots.
+     */
+    public int size() {
+        return types.length;
     }
 
-    public int size() { return slots.length; }
+    /**
+     * Returns the block type stored in the given slot, or AIR if empty.
+     */
+    public int peekType(int slot) {
+        if (slot < 0 || slot >= types.length) return TileTypes.AIR;
+        return types[slot];
+    }
 
-    public Slot get(int idx) { return slots[idx]; }
+    /**
+     * Returns the number of blocks stored in the given slot.
+     */
+    public int peekCount(int slot) {
+        if (slot < 0 || slot >= counts.length) return 0;
+        return counts[slot];
+    }
 
-    // Add one block of a given type.
-    // If type already exists in a slot -> increment.
-    // Else first empty slot becomes that type.
-    // Returns true if added, false if inventory full for that type.
-    public boolean addBlock(int type) {
-        if (!TileTypes.isPlaceable(type)) return false;
+    /**
+     * Returns true if the inventory has room for one block of the given type.
+     *
+     * A block can be added if:
+     * - there is already a stack of that type with count < MAX_STACK_PER_SLOT
+     * - or there is an empty slot
+     */
+    public boolean canAddBlock(int blockType) {
+        if (blockType == TileTypes.AIR) return false;
 
-        // existing slot
-        for (Slot s : slots) {
-            if (s.type == type) {
-                s.count++;
+        // Existing matching stack with room
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] == blockType && counts[i] < MAX_STACK_PER_SLOT) {
                 return true;
             }
         }
 
-        // empty slot
-        for (Slot s : slots) {
-            if (s.type == TileTypes.AIR || s.count == 0) {
-                s.type = type;
-                s.count = 1;
+        // Empty slot available
+        for (int i = 0; i < types.length; i++) {
+            if (counts[i] == 0) {
                 return true;
             }
         }
 
-        return false; // full
+        return false;
     }
 
-    // Consume one from selected slot. Returns consumed block type, or AIR if none.
-    public int consumeFromSlot(int idx) {
-        if (idx < 0 || idx >= slots.length) return TileTypes.AIR;
-        Slot s = slots[idx];
-        if (s.type == TileTypes.AIR || s.count <= 0) return TileTypes.AIR;
+    /**
+     * Adds one block of the given type if there is space.
+     *
+     * Priority:
+     * 1. Add to an existing matching stack if it has room
+     * 2. Otherwise place into an empty slot
+     *
+     * Returns true if successful.
+     */
+    public boolean addBlock(int blockType) {
+        if (blockType == TileTypes.AIR) return false;
 
-        int t = s.type;
-        s.count--;
-        if (s.count == 0) s.type = TileTypes.AIR;
+        // Add to existing stack first
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] == blockType && counts[i] < MAX_STACK_PER_SLOT) {
+                counts[i]++;
+                return true;
+            }
+        }
+
+        // Otherwise use empty slot
+        for (int i = 0; i < types.length; i++) {
+            if (counts[i] == 0) {
+                types[i] = blockType;
+                counts[i] = 1;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Consumes one block from the given slot and returns its type.
+     * Returns AIR if the slot is empty or invalid.
+     */
+    public int consumeFromSlot(int slot) {
+        if (slot < 0 || slot >= types.length) return TileTypes.AIR;
+        if (counts[slot] <= 0) return TileTypes.AIR;
+
+        int t = types[slot];
+        counts[slot]--;
+
+        if (counts[slot] == 0) {
+            types[slot] = TileTypes.AIR;
+        }
+
         return t;
-    }
-
-    public int peekType(int idx) {
-        if (idx < 0 || idx >= slots.length) return TileTypes.AIR;
-        Slot s = slots[idx];
-        if (s.count <= 0) return TileTypes.AIR;
-        return s.type;
-    }
-
-    public int peekCount(int idx) {
-        if (idx < 0 || idx >= slots.length) return 0;
-        return slots[idx].count;
     }
 }
