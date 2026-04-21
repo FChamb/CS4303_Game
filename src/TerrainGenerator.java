@@ -10,7 +10,7 @@ import java.util.Random;
  * reaches the ground depends on the platform's height above the ground layer:
  *
  *   Low  (≤ 8 tiles above ground):  fill all the way down → grounded canyon.
- *   High (> 8 tiles above ground):  fill only 6 tiles down → floating island.
+ *   High (> 8 tiles above ground):  fill a deeper body → larger floating island.
  *
  * This creates a natural difficulty progression: early levels feel like canyons
  * (you fall in, you climb out), while later levels float free over open ground
@@ -35,8 +35,8 @@ import java.util.Random;
 public class TerrainGenerator {
 
     // Heights at which the mesa becomes a floating island rather than a grounded cliff
-    private static final int FLOAT_THRESHOLD = 8;  // tiles above ground
-    private static final int FLOAT_FILL_DEPTH = 6; // tiles of body below a floating mesa
+    private static final int FLOAT_THRESHOLD = 8;   // tiles above ground
+    private static final int FLOAT_FILL_DEPTH = 10; // larger floating-island body depth
 
     private final int cols;
     private final int rows;
@@ -142,7 +142,7 @@ public class TerrainGenerator {
             if (rise < 0) rise = 0;
 
             int endCol = Math.min(currentCol + len - 1, cols - 2);
-            int type   = platformMaterial(section);
+            int type   = TileTypes.GRASS;
 
             // ---- platform surface ----
             placeSurface(tiles, currentCol, endCol, currentRow, type);
@@ -150,14 +150,37 @@ public class TerrainGenerator {
             // ---- mesa body (grounded or floating depending on height) ----
             fillMesaBelow(tiles, currentCol, endCol, currentRow);
 
-            // ---- visual embellishments ----
-            maybeAddSurfaceRock(tiles, currentCol, endCol, currentRow, len);
-            maybeAddStepLedge(tiles, currentCol, endCol, currentRow, type);
-
             platforms.add(new int[]{currentCol, currentRow, endCol - currentCol + 1});
 
-            currentCol += len + gap;
-            currentRow -= rise;
+            // Default progression: forward and upward.
+            int nextCol = currentCol + len + gap;
+            int nextRow = currentRow - rise;
+
+            maybeAddVerticalAssistIsland(tiles, platforms, endCol, currentRow, nextCol, nextRow, gap, rise);
+
+            // Optional switchback: briefly force backward/upward movement before
+            // continuing forward, creating less linear routes.
+            if (section >= 2 && rng.nextFloat() < 0.33f) {
+                int backLen = Math.max(3, Math.min(5, len - 1));
+                int backGap = 4 + rng.nextInt(3);
+                int backCol = Math.max(2, currentCol - backGap - backLen);
+                int backEnd = Math.min(cols - 2, backCol + backLen - 1);
+                int backRise = 1 + rng.nextInt(2);
+                int backRow = Math.max(15, currentRow - backRise);
+                int backType = TileTypes.GRASS;
+
+                placeSurface(tiles, backCol, backEnd, backRow, backType);
+                fillMesaBelow(tiles, backCol, backEnd, backRow);
+                platforms.add(new int[]{backCol, backRow, backEnd - backCol + 1});
+
+                // Continue after the switchback platform.
+                nextCol = backEnd + 3 + rng.nextInt(2);
+                nextRow = Math.max(15, backRow - (1 + rng.nextInt(2)));
+                section++;
+            }
+
+            currentCol = nextCol;
+            currentRow = nextRow;
             section++;
         }
 
@@ -166,9 +189,39 @@ public class TerrainGenerator {
         portalCol = Math.min(currentCol + 2, cols - 14);
         int summitEnd = Math.min(portalCol + 9, cols - 2);
 
-        placeSurface(tiles, portalCol, summitEnd, portalRow, TileTypes.WOOD);
+        placeSurface(tiles, portalCol, summitEnd, portalRow, TileTypes.GRASS);
         fillMesaBelow(tiles, portalCol, summitEnd, portalRow);
         platforms.add(new int[]{portalCol, portalRow, summitEnd - portalCol + 1});
+    }
+
+    /**
+     * Adds a small floating helper island on steep transitions so vertical
+     * progress relies less on digging and more on intentional jump routing.
+     */
+    private void maybeAddVerticalAssistIsland(int[][] tiles, ArrayList<int[]> platforms,
+                                              int currentEndCol, int currentRow,
+                                              int nextCol, int nextRow, int gap, int rise) {
+        if (rise < 2 || gap < 4) return;
+        if (rng.nextFloat() >= 0.62f) return;
+
+        int assistLen = Math.min(4, Math.max(3, gap - 2));
+        if (assistLen >= gap) return;
+
+        int assistC1 = currentEndCol + 1 + Math.max(1, (gap - assistLen) / 2);
+        int assistC2 = assistC1 + assistLen - 1;
+
+        // Keep at least one-tile air gap from both neighboring platforms.
+        if (assistC1 <= currentEndCol + 1) return;
+        if (assistC2 >= nextCol - 1) return;
+
+        int assistRow = currentRow - Math.max(1, rise - 1);
+        assistRow = Math.max(nextRow + 1, assistRow);
+        assistRow = Math.min(currentRow - 1, assistRow);
+        if (assistRow <= 2) return;
+
+        placeSurface(tiles, assistC1, assistC2, assistRow, TileTypes.GRASS);
+        fillMesaBelow(tiles, assistC1, assistC2, assistRow);
+        platforms.add(new int[]{assistC1, assistRow, assistLen});
     }
 
     // ============================================================ mesa body
@@ -178,8 +231,8 @@ public class TerrainGenerator {
      *
      * If the platform is close to the ground (≤ FLOAT_THRESHOLD tiles up) the
      * fill reaches all the way to the ground layer — classic grounded canyon.
-     * If the platform is higher, only FLOAT_FILL_DEPTH rows are filled and the
-     * rest is open air — a floating island.  A player who falls off a floating
+     * If the platform is higher, FLOAT_FILL_DEPTH rows are filled and the
+     * rest is open air — a floating island. A player who falls off a floating
      * island lands on the flat ground below and can walk back to the start.
      */
     private void fillMesaBelow(int[][] tiles, int c1, int c2, int platformRow) {
@@ -199,11 +252,6 @@ public class TerrainGenerator {
                 if (tiles[r][c] == TileTypes.AIR)
                     tiles[r][c] = type;
             }
-        }
-
-        // Hanging stalactites on floating mesas add visual depth
-        if (heightAboveGround > FLOAT_THRESHOLD && rng.nextFloat() < 0.65f) {
-            addStalactites(tiles, c1, c2, toRow);
         }
     }
 

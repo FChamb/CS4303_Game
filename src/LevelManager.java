@@ -8,11 +8,11 @@
  * one session to the next.
  *
  * Difficulty curve:
- *   Level 1 → difficulty 2  (introductory, wide platforms, small gaps, 1 enemy)
- *   Level 2 → difficulty 4  (comfortable, moderate gaps, 2 enemies)
- *   Level 3 → difficulty 6  (challenging, some build-requiring gaps, 3 enemies)
- *   Level 4 → difficulty 8  (hard, most gaps need blocks/grapple, 4–5 enemies)
- *   Level 5 → difficulty 10 (maximum, minimal resources, 6 enemies)
+ *   Level 1 → difficulty 1  (tutorial-like opener, widest platforms, light pressure)
+ *   Level 2 → difficulty 3  (comfortable, moderate spacing, low enemy pressure)
+ *   Level 3 → difficulty 5  (challenging, clearer need for tool usage)
+ *   Level 4 → difficulty 7  (hard, frequent build/grapple decisions)
+ *   Level 5 → difficulty 9  (near-maximum challenge without abrupt spike)
  *
  * The curve was chosen empirically so each transition feels like a noticeable
  * step up: platform length drops, gap size grows, and enemy count increases.
@@ -20,7 +20,7 @@
 public class LevelManager {
 
     private static final int   TOTAL_LEVELS  = 5;
-    private static final int[] DIFFICULTIES  = {2, 4, 6, 8, 10};
+    private static final int[] DIFFICULTIES  = {1, 3, 5, 7, 9};
 
     private int  currentIndex;   // 0-based
     private long baseSeed;

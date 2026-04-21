@@ -87,7 +87,7 @@ public class LevelGenerator {
         // ---- Sub-generator 4: Enemy placement (Level 2) ----
         // Depends on: platform list (layout must exist before spacing can be calculated)
         EnemySpawner enemies = new EnemySpawner(tileSize, seed + 3L);
-        enemySpawns    = enemies.spawn(platforms, config);
+        enemySpawns    = enemies.spawn(platforms, config, tiles, cols, rows);
         enemySpeedScale = config.enemySpeedScale;
 
         // ---- Sub-generator 5: Item distribution (Level 2) ----

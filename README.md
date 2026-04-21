@@ -1,215 +1,101 @@
-# CS4303 Practical 1 – Physics Based Sandbox Game
+# Mountain Ascent
 
----
+CS4303 Practical 3: a 2D sandbox-platformer built in Java with the Processing framework, focused on procedural content generation.
 
-# Overview
+## Overview
 
-This project is a small 2D sandbox style platformer built using a custom physics engine implemented in Java using the Processing framework.
+The player climbs a procedurally generated mountain by platforming, mining/placing blocks, and using a one-use grappling hook, while avoiding enemies and reaching a portal.
 
-The main goal of the game is to reach a portal placed somewhere in the world. The player can move around the world, mine blocks, place blocks, and use a grappling hook to swing across obstacles.
+Generation is deterministic from a seed. The start screen lets the player type a custom seed and generate a repeatable five-level campaign.
 
-The project focuses primarily on implementing the physics systems required in the assignment specification:
+## Practical 3 Coverage
 
-- **Level 1:** Point mass physics body with force accumulation and integration
-- **Level 2:** Collision detection and response using axis aligned bounding boxes against a tile based world
-- **Level 3:** Modular physics architecture using force generators and a force registry
-- **Level 4:** A grappling hook cable constraint allowing the player to swing from an anchor point
+### Level 1: Generate Playable Levels
 
----
+- Constraint based terrain generation creates a critical path of platforms/mesas.
+- Core movement constraints are enforced by bounded gap/rise ranges.
+- Border and ground rules guarantee valid world bounds and recoverable space.
 
-# Physics Engine Architecture
+### Level 2: Procedural Extras
 
-The physics engine is designed to be modular and separated from the game logic.
+- Enemy placement uses spacing/position rules derived from generated platforms.
+- Grapple pickup and resource placement use dedicated distribution logic.
+- Biome and cave passes decorate and reshape terrain after base generation.
 
-## Body
+### Level 3: Difficulty Parameter
 
-Represents a dynamic physics object containing:
+- A 5 level campaign uses a difficulty curve: `1, 3, 5, 7, 9`.
+- Difficulty influences platform lengths/gaps/rises and enemy pressure/speed.
+- Progression is coordinated by `LevelManager`.
 
-- position
-- velocity
-- acceleration
-- inverse mass
-- accumulated forces
+### Level 4: Generator Combinator
 
-Motion is integrated using **semi implicit Euler integration**.
+- `LevelGenerator` coordinates sub-generators in dependency order:
+  - `TerrainGenerator`
+  - `BiomeDecorator`
+  - `CaveGenerator`
+  - `EnemySpawner`
+  - `ItemDistributor`
+- This preserves consistency between layout, decoration, item placement, and challenge scaling.
 
-## PhysicsWorld
+## Seeded Generation
 
-Stores all active physics bodies and advances the simulation for each frame.
+- Start screen flow:
+  - Click seed input box and type a number or text.
+  - Click `Generate World`.
+- Numeric seeds are used directly; text seeds are hashed to a stable long value.
+- The same seed reproduces the same campaign layout sequence and difficulty progression.
 
-## ForceRegistry
+## Controls
 
-Associates bodies with force generators.
+### Start Screen
 
-## ForceGenerator
-
-Interface used by systems that apply forces to bodies.
-
-## GravityForce
-
-Applies constant downward acceleration to registered bodies.
-
-## TileCollision
-
-Handles collision detection and response between the player and solid tiles in the tile map.
-
-## GrappleCable
-
-Implements a cable constraint used for the grappling hook mechanic.
-
-If the player moves beyond the cable length:
-
-- the body is projected back onto the cable radius
-- outward radial velocity is removed
-- tangential velocity is preserved
-
-This allows natural swinging behavior.
-
----
-
-# AI System
-
-The game includes hostile flying enemies that demonstrate the four AI levels required in the specification.
-
-## Level 1 – Steering Behaviors
-
-Enemies use basic steering behaviors:
-
-- wandering movement
-- seeking/pursuit of the player
-
-## Level 2 – Compound Behaviors
-
-Multiple steering behaviors are combined:
-
-- pursuit/path-following
-- obstacle avoidance (tile based lookahead)
-- separation (enemies avoid clustering)
-
-These behaviors are weighted and combined to produce smoother movement.
-
-## Level 3 – Decision Making
-
-Enemies use a **finite state machine (FSM)** with two main states:
-
-- **WANDER** – slow roaming behavior
-- **CHASE** – actively pursue the player
-
-State transitions depend on:
-
-- distance to the player
-- a short “alert timer” so enemies do not instantly disengage
-
-## Level 4 – Pathfinding
-
-Enemies use **A*** pathfinding over the tile grid:
-
-- world positions are converted to tile coordinates
-- A* is run on traversable tiles (air)
-- the resulting path is converted back into world space waypoints
-
-This allows enemies to navigate complex terrain and reach the player even when direct movement is blocked.
-
----
-
-# Game Features
-
-The game includes several sandbox and gameplay systems:
-
-- Player movement and jumping using physics
-- Tile based mining and block placement
-- Limited inventory system (2 slots, capped stack sizes)
-- Dropped block system
-- Grappling hook with single use cable constraint
-- AI enemies with multi level behaviour
-- Start screen, death screen, and win screen
-- Camera system that follows the player through the world
-
----
-
-# Controls
-
-## Movement
-
-```
-A / D         Move left / right
-SPACE or W    Jump
+```text
+Click seed input box     Edit custom seed
+Click "Generate World"   Start generation and play
 ```
 
-## Sandbox Mechanics
+### In Game
 
-```
+```text
+A / D          Move left / right
+SPACE or W     Jump
 Left Click     Mine block
 Right Click    Place block
 Mouse Wheel    Switch hotbar slot
 1 / 2          Select hotbar slot
+E              Activate / release grapple
+F3             Toggle help/debug text
 ```
 
-## Grappling Hook
+### Menus During Run
 
-```
-E    Activate / release grapple
-```
-
-The grappling hook must first be collected from the world before it can be used.  
-It has a **single use**.
-
-## Other
-
-```
-F3    Toggle help/debug text
-ENTER Navigate menus / restart
+```text
+ENTER          Retry after death / continue after level clear
 ```
 
----
+## Build and Run
 
----
+Requirements:
 
-# Objective
+- Java JDK (8+)
+- Processing core library JAR included in `lib/`
 
-Reach the **portal** located in the world.
+Commands:
 
-Players must:
-
-- navigate platforming sections
-- manage limited building resources
-- avoid enemies
-- use the grappling hook strategically
-
-to reach the goal.
-
-
----
-
-# Compilation
-
-The project uses Java together with the Processing core library.
-
-To compile the project from the command line:
-
-```
+```bash
 make compile
-```
-
----
-
-# Running the Game
-
-To run the game:
-
-```
 make run
+make clean
 ```
 
-A window will open containing the game.
+## Project Structure
 
----
-
-# Dependencies
-
-This project requires:
-
-- Java (JDK 8 or newer)
-- Processing core library (`core.jar`)
-
-The `core.jar` file is included in the submission source folder.
+- `src/Main.java`: main loop, rendering, UI, input, game state coordination
+- `src/LevelManager.java`: campaign progression and difficulty curve
+- `src/LevelGenerator.java`: generator combinator
+- `src/TerrainGenerator.java`: base playable mountain/path generation
+- `src/BiomeDecorator.java`, `src/CaveGenerator.java`: terrain passes
+- `src/EnemySpawner.java`, `src/ItemDistributor.java`: procedural extras
+- `src/Enemy.java`, `src/PathFinder.java`: enemy AI/pathfinding
+- `src/TileMap.java`, `src/TileTypes.java`: tile world and tile data

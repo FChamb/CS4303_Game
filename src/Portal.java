@@ -10,11 +10,21 @@ public class Portal {
     }
 
     public void draw(PApplet p) {
+        float pulse = 0.5f + 0.5f * PApplet.sin(p.millis() * 0.006f);
+        float outer = radius * (2.3f + 0.35f * pulse);
+        float inner = radius * (1.2f + 0.18f * pulse);
+
+        p.noStroke();
+        p.fill(180, 120, 255, 55 + (int)(65 * pulse));
+        p.circle(pos.x, pos.y, outer * 1.45f);
+
         p.noFill();
-        p.stroke(190, 100, 255);
-        p.strokeWeight(4);
-        p.circle(pos.x, pos.y, radius * 2.2f);
+        p.stroke(210, 140, 255);
+        p.strokeWeight(5);
+        p.circle(pos.x, pos.y, outer);
+
+        p.stroke(245, 210, 255);
         p.strokeWeight(2);
-        p.circle(pos.x, pos.y, radius * 1.3f);
+        p.circle(pos.x, pos.y, inner);
     }
 }

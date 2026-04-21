@@ -36,7 +36,8 @@ public class EnemySpawner {
      * @param platforms ordered list of int[]{col, row, length} from TerrainGenerator
      * @param config    difficulty config (provides enemyCount)
      */
-    public float[][] spawn(ArrayList<int[]> platforms, DifficultyConfig config) {
+    public float[][] spawn(ArrayList<int[]> platforms, DifficultyConfig config,
+                           int[][] tiles, int cols, int rows) {
         int count   = config.enemyCount;
         int pathLen = platforms.size();
 
@@ -58,17 +59,58 @@ public class EnemySpawner {
             int pRow   = plat[1];
             int pLen   = plat[2];
 
-            // Centre of platform + small horizontal jitter
+            // Centre of platform + bounded jitter (avoid extreme edges/walls).
             float centreX = (pCol + pLen * 0.5f) * tileSize;
-            float jitterX = (rng.nextFloat() - 0.5f) * (pLen * tileSize * 0.4f);
+            float jitterRange = Math.max(tileSize, pLen * tileSize * 0.28f);
+            float jitterX = (rng.nextFloat() - 0.5f) * jitterRange;
 
-            // Float 2–4 tiles above the platform surface
+            float spawnX = centreX + jitterX;
+            float minX = (pCol + 1.2f) * tileSize;
+            float maxX = (pCol + pLen - 1.2f) * tileSize;
+            if (minX < maxX) spawnX = clamp(spawnX, minX, maxX);
+
+            // Float above platform, then push up until clear.
             float spawnY = (pRow - 2 - rng.nextInt(3)) * (float)tileSize;
+            int adjust = 0;
+            while (adjust < 10 && !isSpawnClear(tiles, cols, rows, spawnX, spawnY)) {
+                spawnY -= tileSize;
+                adjust++;
+            }
 
-            spawns[i][0] = centreX + jitterX;
+            // Fallback: platform center and higher if still not clear.
+            if (!isSpawnClear(tiles, cols, rows, spawnX, spawnY)) {
+                spawnX = (pCol + pLen * 0.5f) * tileSize;
+                spawnY = (pRow - 4) * (float)tileSize;
+                adjust = 0;
+                while (adjust < 10 && !isSpawnClear(tiles, cols, rows, spawnX, spawnY)) {
+                    spawnY -= tileSize;
+                    adjust++;
+                }
+            }
+
+            spawns[i][0] = spawnX;
             spawns[i][1] = spawnY;
         }
 
         return spawns;
+    }
+
+    private boolean isSpawnClear(int[][] tiles, int cols, int rows, float wx, float wy) {
+        int c = Math.max(1, Math.min(cols - 2, (int)(wx / tileSize)));
+        int r = Math.max(1, Math.min(rows - 2, (int)(wy / tileSize)));
+
+        // Enemy body occupies roughly one tile radius region; keep a 3x3 clear patch.
+        for (int rr = r - 1; rr <= r + 1; rr++) {
+            if (rr < 1 || rr >= rows - 1) return false;
+            for (int cc = c - 1; cc <= c + 1; cc++) {
+                if (cc < 1 || cc >= cols - 1) return false;
+                if (tiles[rr][cc] != TileTypes.AIR) return false;
+            }
+        }
+        return true;
+    }
+
+    private float clamp(float v, float lo, float hi) {
+        return Math.max(lo, Math.min(hi, v));
     }
 }

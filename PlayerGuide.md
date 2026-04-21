@@ -1,113 +1,78 @@
-# Player's Guide
+# Mountain Ascent - Player Guide
 
----
+## Goal
 
-# Overview
+Reach the portal at the summit of each mountain while surviving enemies and navigating gaps.
 
-This game is a small 2D sandbox style platformer built using a custom physics engine.
+The game is a 5 level campaign with increasing difficulty.
 
-The player can explore the world, mine and place blocks, and use a grappling hook to move around the environment. The goal is to reach the **portal** located somewhere in the level.
+## Starting a Run
 
-Players may modify the terrain by mining and placing blocks to create paths to the goal.
+1. On the title screen, click the seed input box.
+2. Type a seed (number or text).
+3. Click `Generate World`.
 
-Hostile enemies are also present in the world and must be avoided while navigating to the portal.
+A short generation animation plays, then the run starts.
 
----
+Using the same seed gives the same campaign generation pattern.
 
-# Goal
+## Controls
 
-Reach the **portal** in the level.
-
-To do this, you can:
-
-- Mine blocks
-- Place blocks
-- Use the grappling hook to swing across obstacles
-- Avoid enemies
-
-When the player reaches the portal, the level is completed.
-
----
-
-# Controls
-
-## Movement
-
-```
+```text
 A / D          Move left / right
 SPACE or W     Jump
+Left Click     Mine block
+Right Click    Place block
+Mouse Wheel    Switch hotbar slot
+1 / 2          Select hotbar slot
+E              Activate / release grapple
+F3             Toggle help/debug text
+ENTER          Retry after death / continue after level clear
 ```
 
-## Sandbox Mechanics
+## Core Mechanics
 
-```
-Left Click      Mine block
-Right Click     Place block
-Mouse Wheel     Switch hotbar slot
-1 / 2           Switch block
-```
+### Mining and Building
 
-Mining blocks drops them into the world as items.  
-To collect them, move over the dropped block.
+- Hold left click on a nearby block to mine it.
+- Mined blocks drop as pickups in the world.
+- Pickups are collected by moving over them.
+- Right click places a block from the selected hotbar slot.
 
-Blocks can only be mined or placed within a limited range of the player which is shown via the white block outline.
+### Inventory
 
----
+- Two-slot hotbar.
+- Each slot has limited capacity.
+- Only the selected slot is used for placement.
 
-# Grappling Hook
+### Grappling Hook
 
-The grappling hook is a special item found in the world.
+- The grapple is found as a pickup in the level.
+- Press `E` to attach toward the mouse position.
+- Press `E` again to detach.
+- It is one-use only per level.
 
-To use it:
+### Enemies
 
-1. Move the player to collect the grappling hook pickup.
-2. Press **E** to attach the grapple to the mouse position.
-3. The player will swing from the cable.
-4. Press **E** again to release the grapple.
+- Enemies wander and chase when the player is nearby.
+- Touching an enemy kills the player.
+- Level 1 includes tutorial guidance and a gentler onboarding flow before full pressure ramps up.
 
-Important notes:
+## Level Progression
 
-- The grappling hook has **one use only**.
-- Once released, it disappears for the rest of the level.
+- Clearing a level advances to the next generated mountain.
+- Difficulty increases across 5 levels.
+- After finishing the final level, the game returns to the start screen so a new run/seed can be generated.
 
----
+## Practical Tips
 
-# Inventory
+- Mine before long jumps so you can build recovery paths.
+- Save grapple usage for large gaps or high vertical shortcuts.
+- Keep inventory space available so mined blocks are not wasted.
+- If an enemy is close, prioritize movement and terrain usage over mining.
 
-The player has a 2 slot hotbar.
+## Win/Loss Conditions
 
-- Each slot can hold 4 blocks.
-- Mining blocks drops them into the world, and they must be picked up.
-- Blocks can only be collected if there is space in the inventory.
-- The mouse wheel or number keys (1 / 2) switch between slots.
-- The selected slot determines which block is placed.
-
----
-
-# Enemies
-
-Enemies move around the world and will chase the player if they get close.
-
-- Enemies wander when far away
-- Enemies chase the player when nearby
-- Touching an enemy will cause the player to die
-
-Avoid enemies while navigating the level.
-
----
-
-# Tips
-
-- Mining blocks can create paths to otherwise unreachable areas.
-- Placing blocks can help you build platforms or climb upward.
-- Your inventory is limited, so use blocks carefully.
-- The grappling hook is useful for crossing large gaps or reaching higher areas.
-- Avoid enemies rather than trying to outrun them in tight spaces.
-
----
-
-# Winning the Game
-
-Once the player reaches the **portal**, the level is completed.
-
-A message will appear indicating that the level is finished.
+- Win a level: touch the portal.
+- Lose a level: collide with an enemy.
+- After loss, press `ENTER` to retry the current level.
