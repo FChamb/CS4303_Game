@@ -1,6 +1,6 @@
 # Mountain Ascent
 
-CS4303 Practical 3: a 2D sandbox-platformer built in Java with the Processing framework, focused on procedural content generation.
+CS4303 Practical 3: a 2D sandbox platformer built in Java with the Processing framework, focused on procedural content generation.
 
 ## Overview
 
