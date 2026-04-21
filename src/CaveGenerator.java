@@ -6,7 +6,7 @@ import java.util.Random;
  *
  * Carves cave networks inside mesa/island bodies, giving the player alternate
  * interior routes and climb options through each section. This separates cave
- * concern from the main terrain generation, and depends on the platform list
+ * concern from the main terrain generation and depends on the platform list
  * produced by TerrainGenerator (a Level 4 data-dependency).
  *
  * Design
@@ -43,7 +43,7 @@ public class CaveGenerator {
      * Carves cave tunnels into the tile grid in place.
      *
      * @param tiles        the tile grid to modify
-     * @param platforms    ordered critical-path platform list
+     * @param platforms    ordered critical path platform list
      * @param groundTopRow ground surface row from TerrainGenerator
      */
     public void carve(int[][] tiles, ArrayList<int[]> platforms, int groundTopRow) {
@@ -68,6 +68,7 @@ public class CaveGenerator {
             if (mesaDepth < 6) continue;
 
             int transitionScore = transitionUsefulnessScore(plat, next);
+            // I only allow caves when the next step actually benefits from a cave route.
             if (transitionScore <= 0) continue; // carve only if cave gives meaningful route value.
 
             if (transitionScore > bestTransitionScore) {
@@ -77,6 +78,7 @@ public class CaveGenerator {
 
             // Keep coverage high but not universal.
             if (rng.nextFloat() >= 0.78f) continue;
+            // I carve this cave as a traversal route, not as random empty space.
             carveTunnel(tiles, plat, next, mesaDepth);
             carvedCount++;
         }
@@ -86,6 +88,7 @@ public class CaveGenerator {
             int[] plat = platforms.get(fallbackIdx);
             int[] next = platforms.get(fallbackIdx + 1);
             int depth = estimateMesaDepth(tiles, plat[0], plat[2], plat[1]);
+            // I force one useful cave so a run does not feel cave empty.
             if (depth >= 5) carveTunnel(tiles, plat, next, depth);
         }
     }
@@ -126,6 +129,7 @@ public class CaveGenerator {
         int caveTop = minTop + rng.nextInt(preferredSpan + 1);
         int caveBottom = caveTop + caveHeight - 1;
 
+        // I run this tunnel all the way through the island so it always leads somewhere.
         // Main tunnel through the island.
         int tunnelC1 = platCol;
         int tunnelC2 = platCol + platLen - 1;
@@ -139,6 +143,7 @@ public class CaveGenerator {
         boolean towardRight = next[0] >= platCol;
         int shaftCol = towardRight ? (platCol + platLen - 2) : (platCol + 1);
         int shaftTop = Math.max(1, platRow);
+        // I open this shaft to keep cave entry and exit simple for normal movement.
         carveRect(tiles, shaftTop, caveBottom, shaftCol, shaftCol + 1);
 
         // Small opposite-side shaft keeps entry simple even when approaching backwards.

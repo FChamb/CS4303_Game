@@ -29,6 +29,7 @@ public class BiomeDecorator {
      * @param portalRow    the row index of the summit/portal platform
      */
     public void decorate(int[][] tiles, int groundTopRow, int portalRow) {
+        // I reset solids to stone first, so later layering is consistent everywhere.
         // Normalize non-wood solids to stone first.
         for (int r = 1; r < rows - 1; r++) {
             for (int c = 1; c < cols - 1; c++) {
@@ -46,6 +47,7 @@ public class BiomeDecorator {
                 if (tiles[r - 1][c] != TileTypes.AIR) continue;
                 if (!openToSky(tiles, r, c)) continue;
 
+                // I keep this stack strict so islands do not look noisy or random.
                 tiles[r][c] = TileTypes.GRASS;
                 if (tiles[r + 1][c] == TileTypes.STONE) tiles[r + 1][c] = TileTypes.DIRT;
                 if (tiles[r + 2][c] == TileTypes.STONE) tiles[r + 2][c] = TileTypes.DIRT;

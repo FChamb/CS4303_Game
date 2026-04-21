@@ -7,12 +7,12 @@ import java.util.Random;
  * Enemies are distributed evenly along the critical path with deliberate
  * spacing rules that make the placement feel intentional rather than random:
  *
- *  - The first two platforms (start zone) are always enemy-free so the player
+ *  - The first two platforms (start zone) are always enemy free so the player
  *    has time to orient before the first threat.
  *  - The summit platform (last entry in the list) is also kept clear so the
  *    player can reach the portal without a point-blank ambush.
  *  - Remaining enemies are spread uniformly across the available platforms,
- *    with a small per-enemy jitter so they don't all sit dead-centre.
+ *    with a small per-enemy jitter so they don't all sit dead center.
  *  - Enemies float two-to-four tiles above their assigned platform, matching
  *    the flying-enemy design from Enemy.java.
  *
@@ -59,7 +59,7 @@ public class EnemySpawner {
             int pRow   = plat[1];
             int pLen   = plat[2];
 
-            // Centre of platform + bounded jitter (avoid extreme edges/walls).
+            // Center of platform + bounded jitter (avoid extreme edges/walls).
             float centreX = (pCol + pLen * 0.5f) * tileSize;
             float jitterRange = Math.max(tileSize, pLen * tileSize * 0.28f);
             float jitterX = (rng.nextFloat() - 0.5f) * jitterRange;
@@ -67,11 +67,13 @@ public class EnemySpawner {
             float spawnX = centreX + jitterX;
             float minX = (pCol + 1.2f) * tileSize;
             float maxX = (pCol + pLen - 1.2f) * tileSize;
+            // I clamp x so enemies do not start close to island edges.
             if (minX < maxX) spawnX = clamp(spawnX, minX, maxX);
 
             // Float above platform, then push up until clear.
             float spawnY = (pRow - 2 - rng.nextInt(3)) * (float)tileSize;
             int adjust = 0;
+            // I keep moving upward until the spawn area is clear of solid tiles.
             while (adjust < 10 && !isSpawnClear(tiles, cols, rows, spawnX, spawnY)) {
                 spawnY -= tileSize;
                 adjust++;
@@ -82,6 +84,7 @@ public class EnemySpawner {
                 spawnX = (pCol + pLen * 0.5f) * tileSize;
                 spawnY = (pRow - 4) * (float)tileSize;
                 adjust = 0;
+                // I run one more safety pass from center to prevent block spawns.
                 while (adjust < 10 && !isSpawnClear(tiles, cols, rows, spawnX, spawnY)) {
                     spawnY -= tileSize;
                     adjust++;
@@ -99,6 +102,7 @@ public class EnemySpawner {
         int c = Math.max(1, Math.min(cols - 2, (int)(wx / tileSize)));
         int r = Math.max(1, Math.min(rows - 2, (int)(wy / tileSize)));
 
+        // I require a fully clear patch so enemy bodies never clip into blocks.
         // Enemy body occupies roughly one tile radius region; keep a 3x3 clear patch.
         for (int rr = r - 1; rr <= r + 1; rr++) {
             if (rr < 1 || rr >= rows - 1) return false;

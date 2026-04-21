@@ -106,7 +106,7 @@ public class TerrainGenerator {
 
     /**
      * Prevents grass from appearing under mountain bodies.
-     * If a ground-row grass tile is covered by solid terrain above, it becomes dirt.
+     * If a ground row grass tile is covered by solid terrain above, it becomes dirt.
      */
     private void removeBuriedGroundGrass(int[][] tiles) {
         int r = groundTopRow;
@@ -142,6 +142,7 @@ public class TerrainGenerator {
             if (rise < 0) rise = 0;
 
             int endCol = Math.min(currentCol + len - 1, cols - 2);
+            // I keep all walkable tops as grass so the route reads clearly to the player.
             int type   = TileTypes.GRASS;
 
             // ---- platform surface ----
@@ -156,11 +157,13 @@ public class TerrainGenerator {
             int nextCol = currentCol + len + gap;
             int nextRow = currentRow - rise;
 
+            // I add helper islands on steeper transitions so climbing is less dig heavy.
             maybeAddVerticalAssistIsland(tiles, platforms, endCol, currentRow, nextCol, nextRow, gap, rise);
 
             // Optional switchback: briefly force backward/upward movement before
             // continuing forward, creating less linear routes.
             if (section >= 2 && rng.nextFloat() < 0.33f) {
+                // I occasionally force a backward move here so the climb feels less linear.
                 int backLen = Math.max(3, Math.min(5, len - 1));
                 int backGap = 4 + rng.nextInt(3);
                 int backCol = Math.max(2, currentCol - backGap - backLen);
@@ -210,7 +213,7 @@ public class TerrainGenerator {
         int assistC1 = currentEndCol + 1 + Math.max(1, (gap - assistLen) / 2);
         int assistC2 = assistC1 + assistLen - 1;
 
-        // Keep at least one-tile air gap from both neighboring platforms.
+        // Keep at least one tile air gap from both neighboring platforms.
         if (assistC1 <= currentEndCol + 1) return;
         if (assistC2 >= nextCol - 1) return;
 
@@ -241,12 +244,14 @@ public class TerrainGenerator {
         int toRow;
 
         if (heightAboveGround <= FLOAT_THRESHOLD) {
-            toRow = groundTopRow - 1;                           // grounded
+            toRow = groundTopRow - 1;
         } else {
+            // I keep floating islands deeper so caves have room to become usable paths.
             toRow = Math.min(fromRow + FLOAT_FILL_DEPTH - 1, groundTopRow - 1); // floating
         }
 
         for (int r = fromRow; r <= toRow; r++) {
+            // I enforce a strict material stack here: thin dirt cap and stone core.
             int type = (r - fromRow < 2) ? TileTypes.DIRT : TileTypes.STONE;
             for (int c = Math.max(1, c1); c <= Math.min(cols - 2, c2); c++) {
                 if (tiles[r][c] == TileTypes.AIR)
@@ -277,8 +282,7 @@ public class TerrainGenerator {
      * 25 % chance: places a 1–2-tile stone rock on top of the platform surface.
      * The player must jump over it; on narrow platforms this is a real obstacle.
      */
-    private void maybeAddSurfaceRock(int[][] tiles, int c1, int c2,
-                                     int platformRow, int len) {
+    private void maybeAddSurfaceRock(int[][] tiles, int c1, int c2, int platformRow, int len) {
         if (len < 4 || rng.nextFloat() >= 0.25f) return;
         int rockCol    = c1 + 1 + rng.nextInt(len - 2);
         int rockHeight = 1 + rng.nextInt(2);
@@ -293,8 +297,7 @@ public class TerrainGenerator {
      * 30 % chance: raises one end of the platform by 1 tile, creating a step.
      * The player can use it as a launching ramp or must jump to clear it.
      */
-    private void maybeAddStepLedge(int[][] tiles, int c1, int c2,
-                                   int platformRow, int surfaceType) {
+    private void maybeAddStepLedge(int[][] tiles, int c1, int c2, int platformRow, int surfaceType) {
         int len = c2 - c1 + 1;
         if (len < 5 || rng.nextFloat() >= 0.30f) return;
 

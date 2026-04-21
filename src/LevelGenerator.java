@@ -37,14 +37,13 @@ public class LevelGenerator {
     private final DifficultyConfig config;
     private final long           seed;
 
-    // ---- metadata published after generate() ----
     public float   playerSpawnX;
     public float   playerSpawnY;
     public float   portalX;
     public float   portalY;
     public float   grappleX;
     public float   grappleY;
-    public float[][] enemySpawns;     // [i][0]=x, [i][1]=y
+    public float[][] enemySpawns;
     public float   enemySpeedScale;
     public int     groundTopRow;
     public float   upperGoalY;
@@ -82,11 +81,13 @@ public class LevelGenerator {
         // ---- Sub-generator 3: Cave routing (Level 2 / Level 4 dependency layering) ----
         // Runs after biome tinting so cave interiors keep rock colors, not grass tops.
         CaveGenerator caves = new CaveGenerator(cols, rows, seed + 2L);
+        // I pass groundTopRow so caves stay focused on floating islands.
         caves.carve(tiles, platforms, terrain.groundTopRow);
 
         // ---- Sub-generator 4: Enemy placement (Level 2) ----
         // Depends on: platform list (layout must exist before spacing can be calculated)
         EnemySpawner enemies = new EnemySpawner(tileSize, seed + 3L);
+        // I pass the tile grid so spawn placement can reject solid tile overlap.
         enemySpawns    = enemies.spawn(platforms, config, tiles, cols, rows);
         enemySpeedScale = config.enemySpeedScale;
 
