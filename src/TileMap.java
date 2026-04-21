@@ -14,7 +14,7 @@ public class TileMap {
     public final int tileSize;
     public final int cols, rows;
 
-    private final int[][] tiles;
+    private int[][] tiles;
 
     // Useful landmark values for world layout
     private int groundTopRow;
@@ -29,6 +29,22 @@ public class TileMap {
         this.tiles = new int[rows][cols];
 
         generateTestLevel();
+    }
+
+    /**
+     * Procedural constructor — delegates tile generation to LevelGenerator.
+     * The generator's generate() must be called first (via Main) so metadata
+     * fields (groundTopRow, upperGoalY, grapple position) are already set.
+     */
+    public TileMap(LevelGenerator gen, int worldW, int worldH, int tileSize) {
+        this.tileSize = tileSize;
+        this.cols = (int)Math.ceil(worldW / (float)tileSize);
+        this.rows = (int)Math.ceil(worldH / (float)tileSize);
+        this.tiles = gen.generate();
+        this.groundTopRow   = gen.groundTopRow;
+        this.upperGoalY     = gen.upperGoalY;
+        this.hiddenRewardX  = gen.grappleX;
+        this.hiddenRewardY  = gen.grappleY;
     }
 
     private void generateTestLevel() {

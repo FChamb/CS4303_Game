@@ -69,6 +69,9 @@ public class Main extends PApplet {
     Vec2 grapplePickupPos = new Vec2();
     GrappleCable grappleCable;
 
+    // ---------- LEVEL / PCG ----------
+    LevelManager levelManager;
+
     // ---------- GAME STATE ----------
     enum GameState {
         START,
@@ -89,44 +92,46 @@ public class Main extends PApplet {
 
     public void setup() {
         textFont(createFont("Arial", 16));
+        levelManager = new LevelManager(System.currentTimeMillis());
         resetGame();
         gameState = GameState.START;
     }
 
     /**
-     * Creates a fresh run of the game world.
+     * Creates a fresh run using a procedurally generated level from the
+     * current LevelManager state.
      */
     void resetGame() {
         world = new PhysicsWorld();
 
-        int worldWidth = width * 6;
+        int worldWidth  = width * 6;
         int worldHeight = height * 14;
 
-        map = new TileMap(worldWidth, worldHeight, 30);
+        // Procedural generation — LevelGenerator coordinates all sub-generators
+        LevelGenerator gen = levelManager.createGenerator(worldWidth, worldHeight, 30);
+        map = new TileMap(gen, worldWidth, worldHeight, 30);
+        // gen.generate() ran inside TileMap; all metadata fields are now populated
 
-        // Spawn player near the bottom-left start zone.
-        player = new Player(180, map.getGroundTopY() - 120);
+        player = new Player(gen.playerSpawnX, gen.playerSpawnY);
         player.body.invMass = 1.0f;
         world.addBody(player.body);
 
-        // Portal high and far.
-        portal = new Portal(worldWidth - 260, map.getUpperGoalY() - 40, 18);
+        portal = new Portal(gen.portalX, gen.portalY, 18);
 
         world.forceRegistry.add(player.body, new GravityForce(0, 900));
 
-        // Spread enemies across the level
-        enemies = new Enemy[4];
-        enemies[0] = new Enemy(worldWidth * 0.22f, map.getGroundTopY() - 280);
-        enemies[1] = new Enemy(worldWidth * 0.42f, map.getGroundTopY() - 620);
-        enemies[2] = new Enemy(worldWidth * 0.62f, map.getGroundTopY() - 980);
-        enemies[3] = new Enemy(worldWidth * 0.82f, map.getUpperGoalY() - 180);
-
-        for (Enemy e : enemies) {
-            world.addBody(e.body);
+        // Procedurally placed enemies with difficulty-scaled speeds
+        enemies = new Enemy[gen.enemySpawns.length];
+        for (int i = 0; i < enemies.length; i++) {
+            enemies[i] = new Enemy(gen.enemySpawns[i][0], gen.enemySpawns[i][1]);
+            enemies[i].wanderSpeed    *= gen.enemySpeedScale;
+            enemies[i].chaseSpeedMin  *= gen.enemySpeedScale;
+            enemies[i].chaseSpeedMax  *= gen.enemySpeedScale;
+            world.addBody(enemies[i].body);
         }
 
         grappleCable = new GrappleCable();
-        grapplePickupPos.set(map.getHiddenRewardX(), map.getHiddenRewardY());
+        grapplePickupPos.set(gen.grappleX, gen.grappleY);
 
         cameraX = 0;
         cameraY = 0;
@@ -301,20 +306,29 @@ public class Main extends PApplet {
         textAlign(CENTER, CENTER);
 
         textSize(36);
-        text("Sandbox AI Game", width / 2.0f, height / 2.0f - 90);
+        text("Sandbox AI Game", width / 2.0f, height / 2.0f - 100);
 
-        textSize(18);
-        text("Climb through the mountains, avoid the enemies, and reach the portal.", width / 2.0f, height / 2.0f - 35);
-        text("Enemies use FSM and pathfinding. Resources are limited.", width / 2.0f, height / 2.0f - 5);
+        textSize(17);
+        text("Climb through " + levelManager.getTotalLevels()
+                + " procedurally generated mountains, avoid enemies, reach the portal.",
+                width / 2.0f, height / 2.0f - 48);
+        text("Each level is unique and harder than the last.", width / 2.0f, height / 2.0f - 22);
 
-        textSize(16);
-        text("Controls:", width / 2.0f, height / 2.0f + 45);
-        text("A / D = Move    SPACE/W = Jump    Left Click = Mine", width / 2.0f, height / 2.0f + 75);
-        text("Right Click = Place    Mouse Wheel = Hotbar    E = Grapple", width / 2.0f, height / 2.0f + 100);
-        text("1 / 2 = Select hotbar slot    F3 = Toggle help text", width / 2.0f, height / 2.0f + 125);
+        textSize(14);
+        fill(180, 230, 255);
+        text("Level " + levelManager.getLevelNumber() + " / " + levelManager.getTotalLevels()
+                + "   Difficulty " + levelManager.getDifficulty() + " / 10",
+                width / 2.0f, height / 2.0f + 12);
+
+        fill(255);
+        textSize(15);
+        text("Controls:", width / 2.0f, height / 2.0f + 50);
+        text("A / D = Move    SPACE/W = Jump    Left Click = Mine", width / 2.0f, height / 2.0f + 76);
+        text("Right Click = Place    Mouse Wheel = Hotbar    E = Grapple", width / 2.0f, height / 2.0f + 98);
+        text("1 / 2 = Select hotbar slot    F3 = Toggle help text", width / 2.0f, height / 2.0f + 120);
 
         textSize(20);
-        text("Press ENTER to Start", width / 2.0f, height / 2.0f + 180);
+        text("Press ENTER to Start", width / 2.0f, height / 2.0f + 168);
 
         textAlign(LEFT, BASELINE);
         textSize(16);
@@ -337,16 +351,42 @@ public class Main extends PApplet {
     }
 
     void drawWinScreen() {
-        fill(80, 220, 120);
         textAlign(CENTER, CENTER);
 
-        textSize(42);
-        text("You Win!", width / 2.0f, height / 2.0f - 40);
+        if (levelManager.hasNextLevel()) {
+            fill(80, 220, 120);
+            textSize(42);
+            text("Level " + levelManager.getLevelNumber() + " Complete!",
+                    width / 2.0f, height / 2.0f - 60);
 
-        fill(255);
-        textSize(20);
-        text("You reached the portal and escaped the mountain.", width / 2.0f, height / 2.0f + 10);
-        text("Press ENTER to return to the start screen.", width / 2.0f, height / 2.0f + 55);
+            fill(255);
+            textSize(20);
+            text("You reached the portal and escaped the mountain.",
+                    width / 2.0f, height / 2.0f - 5);
+
+            textSize(17);
+            fill(180, 230, 255);
+            text("Next: Level " + (levelManager.getLevelNumber() + 1)
+                    + "   Difficulty " + levelManager.getNextDifficulty() + " / 10",
+                    width / 2.0f, height / 2.0f + 35);
+
+            fill(255);
+            textSize(18);
+            text("Press ENTER to continue.", width / 2.0f, height / 2.0f + 72);
+
+        } else {
+            fill(255, 215, 0);
+            textSize(42);
+            text("You Win!", width / 2.0f, height / 2.0f - 60);
+
+            fill(255);
+            textSize(22);
+            text("All " + levelManager.getTotalLevels() + " mountains conquered!",
+                    width / 2.0f, height / 2.0f - 5);
+            textSize(18);
+            text("Press ENTER to return to the start screen.",
+                    width / 2.0f, height / 2.0f + 45);
+        }
 
         textAlign(LEFT, BASELINE);
         textSize(16);
@@ -385,6 +425,16 @@ public class Main extends PApplet {
     }
 
     void drawHUD() {
+        // Persistent level + difficulty indicator (always shown)
+        fill(255, 255, 255, 200);
+        textSize(14);
+        textAlign(RIGHT, TOP);
+        text("Level " + levelManager.getLevelNumber() + " / " + levelManager.getTotalLevels()
+                + "   Diff " + levelManager.getDifficulty() + "/10",
+                width - 12, 10);
+        textAlign(LEFT, BASELINE);
+        textSize(16);
+
         if (!showHelpText) return;
 
         fill(255);
@@ -774,6 +824,7 @@ public class Main extends PApplet {
 
         if (gameState == GameState.DEAD) {
             if (key == ENTER || key == RETURN) {
+                levelManager.reset();
                 resetGame();
                 gameState = GameState.START;
             }
@@ -782,8 +833,15 @@ public class Main extends PApplet {
 
         if (gameState == GameState.WON) {
             if (key == ENTER || key == RETURN) {
-                resetGame();
-                gameState = GameState.START;
+                if (levelManager.hasNextLevel()) {
+                    levelManager.advanceLevel();
+                    resetGame();
+                    gameState = GameState.PLAYING;
+                } else {
+                    levelManager.reset();
+                    resetGame();
+                    gameState = GameState.START;
+                }
             }
             return;
         }
